@@ -4,7 +4,7 @@ import sql from 'mssql'
 export const getPosts = async (req, res) => {
     const pool = await getConnection();
 
-    const result = await pool.request().query('SELECT ID, Titulo, Autor, FechaPublicacion, Contenido FROM Posts')
+    const result = await pool.request().query('SELECT ID, Titulo, Autor, FechaPublicacion, Contenido FROM Posts ORDER BY FechaPublicacion DESC')
     res.json(result.recordset)
 }
 
