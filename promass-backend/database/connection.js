@@ -1,6 +1,5 @@
 import sql from 'mssql'
 
-// const sql = require('mssql')
 const dbSettings = {
     user: 'promass-user', 
     password: 'password',

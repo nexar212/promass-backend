@@ -1,36 +1,60 @@
-import { getConnection } from "../database/connection.js"
-import sql from 'mssql'
+import { getConnection } from "../database/connection.js";
+import sql from 'mssql';
 
+// Obtiene todos los posts
 export const getPosts = async (req, res) => {
-    const pool = await getConnection();
+    try {
+        const pool = await getConnection();
+        const result = await pool.request().query(`
+            SELECT ID, Titulo, Autor, FechaPublicacion, Contenido 
+            FROM Posts 
+            ORDER BY FechaPublicacion DESC
+        `);
+        res.json(result.recordset);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener los posts.' });
+    }
+};
 
-    const result = await pool.request().query('SELECT ID, Titulo, Autor, FechaPublicacion, Contenido FROM Posts ORDER BY FechaPublicacion DESC')
-    res.json(result.recordset)
-}
-
+// Obtiene un post por su ID
 export const getOnePost = async (req, res) => {
-    
-    console.log(req.params)
-    const pool = await getConnection();
+    try {
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input('ID', sql.BigInt, req.params.id)
+            .query(`
+                SELECT ID, Titulo, Autor, FechaPublicacion, Contenido 
+                FROM Posts 
+                WHERE ID = @ID
+            `);
+        res.json(result.recordset);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener el post.' });
+    }
+};
 
-    const result = await pool.request()
-        .input('ID', sql.BigInt, req.params.id)
-        .query('SELECT ID,Titulo, Autor, FechaPublicacion, Contenido FROM Posts WHERE ID = @ID')
-    res.json(result.recordset)
-
-}
-
+// Crea un nuevo post
 export const createPost = async (req, res) => {
+    try {
+        const { Titulo, Autor, Contenido } = req.body;
 
-    const pool = await getConnection();
-    const result = await pool.request()
-        .input('Titulo', sql.VarChar, req.body.Titulo)
-        .input('Autor', sql.VarChar, req.body.Autor)
-        .input('Contenido', sql.VarChar, req.body.Contenido)
-        .query('INSERT INTO Posts (Titulo, Autor, FechaPublicacion, Contenido) VALUES (@Titulo, @Autor, GETDATE(), @Contenido)')
+        if (!Titulo || !Autor || !Contenido) {
+            return res.status(400).json({ error: 'Se requieren todos los campos.' });
+        }
 
-    console.log(result)
-    res.json({
-        msj: 'Se guardó correctamente',
-    })
-}
+        const pool = await getConnection();
+        const result = await pool.request()
+            .input('Titulo', sql.VarChar, Titulo)
+            .input('Autor', sql.VarChar, Autor)
+            .input('Contenido', sql.VarChar, Contenido)
+            .query(`
+                INSERT INTO Posts (Titulo, Autor, FechaPublicacion, Contenido) 
+                VALUES (@Titulo, @Autor, GETDATE(), @Contenido)
+            `);
+
+        console.log(result);
+        res.json({ msj: 'Post creado exitosamente.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al crear el post.' });
+    }
+};
